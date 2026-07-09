@@ -156,4 +156,51 @@ echo "Color variables successfully updated for dark mode compatibility!"
 
 
 # V
-More.. 
+The issue here is the dark side of CLI automation: **Regex Brittleness**.
+
+Your script did exactly what you commanded, but it failed because `sed` is hyper-literal. Look closely at the screenshots: the dark mode background successfully applied (it shifted from white to the dark `var(--bg-raised)`), but the text is completely invisible. This means the text color is stuck as `var(--charcoal)`.
+
+When LLMs generate code across 100s of files, they introduce slight syntax variations. Your original script demanded a 100% exact match for `color: "var(--charcoal)"`. If a file had single quotes (`color: 'var(--charcoal)'`) or lacked a space (`color:"var(--charcoal)"`), `sed` blindly skipped it. The result: dark text stranded on a dark background.
+
+Here is the upgraded, aggressive sweep. By targeting the CSS variables directly rather than the surrounding syntax, we bypass the LLM quoting inconsistencies entirely.
+
+Run this from `/Users/hades/Documents/ukubona-grand-central`:
+
+```bash
+#!/bin/bash
+
+echo "Initiating aggressive UI variable sweep..."
+
+TARGET_DIR="frontend/src/apps"
+
+# Swap the variable names directly to bypass quote/spacing inconsistencies
+find "$TARGET_DIR" -name "*.jsx" -type f -exec sed -i '' \
+  -e 's/var(--charcoal)/var(--text)/g' \
+  -e 's/var(--slate)/var(--text-sub)/g' \
+  -e 's/var(--mist)/var(--text-muted)/g' \
+  -e 's/var(--green-pale)/var(--bg-sunken)/g' \
+  -e 's/var(--green-light)/var(--accent-glow)/g' \
+  -e 's/var(--green-bright)/var(--accent)/g' \
+  -e 's/var(--green-mid)/var(--accent)/g' \
+  -e 's/var(--gold)/var(--accent)/g' \
+  -e 's/var(--gold-light)/var(--accent-dim)/g' \
+  {} +
+
+# Handle specific background swaps with wildcards (.) for quote variations
+find "$TARGET_DIR" -name "*.jsx" -type f -exec sed -i '' \
+  -e 's/background: .var(--cream)./background: "transparent"/g' \
+  -e 's/background: .var(--white)./background: "var(--bg-raised)"/g' \
+  {} +
+
+echo "Sweep complete. Dark mode typography restored."
+
+```
+
+### Why this works:
+
+1. **Direct Variable Targeting:** The first `find` command searches and destroys the hardcoded dark text variables (`--charcoal`, `--slate`) no matter how they are wrapped or quoted, replacing them with your semantic, theme-aware variables.
+2. **Wildcard Quoting (`.`):** In the second block, `.` acts as a single-character wildcard. It will catch `background: "var(--white)"` and `background: 'var(--white)'` equally, ensuring the structural backgrounds migrate properly without nuking places where white might be used for text.
+
+Once you execute this, those Kindergarten lessons will instantly flip to high-visibility `var(--text)` (white) when the sun icon is toggled.
+
+Are there any other hardcoded hex codes (`#000000`, `#ffffff`) lingering in the UI layer that we need to hunt down and map to the registry before they cause a similar blackout?
