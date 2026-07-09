@@ -204,3 +204,39 @@ echo "Sweep complete. Dark mode typography restored."
 Once you execute this, those Kindergarten lessons will instantly flip to high-visibility `var(--text)` (white) when the sun icon is toggled.
 
 Are there any other hardcoded hex codes (`#000000`, `#ffffff`) lingering in the UI layer that we need to hunt down and map to the registry before they cause a similar blackout?
+
+
+---
+
+
+`src.sh` a different folder as target
+
+
+```sh
+#!/bin/bash
+
+echo "Initiating global UI variable sweep across all pages and components..."
+
+TARGET_DIR="frontend/src"
+
+# Sweep across ALL .jsx and .css files in the entire src directory
+find "$TARGET_DIR" -type f \( -name "*.jsx" -o -name "*.css" \) -exec sed -i '' \
+  -e 's/var(--charcoal)/var(--text)/g' \
+  -e 's/var(--slate)/var(--text-sub)/g' \
+  -e 's/var(--mist)/var(--text-muted)/g' \
+  -e 's/var(--green-pale)/var(--bg-sunken)/g' \
+  -e 's/var(--green-light)/var(--accent-glow)/g' \
+  -e 's/var(--green-bright)/var(--accent)/g' \
+  -e 's/var(--green-mid)/var(--accent)/g' \
+  -e 's/var(--gold)/var(--accent)/g' \
+  -e 's/var(--gold-light)/var(--accent-dim)/g' \
+  {} +
+
+# Handle the background mappings
+find "$TARGET_DIR" -type f \( -name "*.jsx" -o -name "*.css" \) -exec sed -i '' \
+  -e 's/background: .var(--cream)./background: "transparent"/g' \
+  -e 's/background: .var(--white)./background: "var(--bg-raised)"/g' \
+  {} +
+
+echo "Global sweep complete. All pages and styles mapped to semantic variables."
+```
